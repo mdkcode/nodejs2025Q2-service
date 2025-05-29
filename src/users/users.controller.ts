@@ -8,10 +8,12 @@ import {
   Body,
   Param,
   Put,
+  HttpStatus,
+  HttpCode,
 } from '@nestjs/common';
 import { UsersRepository } from './users.repository';
 
-@Controller('users')
+@Controller('user')
 export class UsersController {
   constructor(private readonly usersRepository: UsersRepository) {}
 
@@ -26,6 +28,7 @@ export class UsersController {
   }
 
   @Get(':id')
+  @HttpCode(HttpStatus.OK)
   findOne(@Param('id') id: string) {
     return this.usersRepository.findOne(id);
   }
