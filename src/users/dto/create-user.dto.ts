@@ -1,7 +1,8 @@
 export class CreateUserDto {
+  id: string;
   login: string;
   password: string;
-  version: number; // integer number, increments on update
-  createdAt: number; // timestamp of creation
+  version: number;
+  createdAt: number;
   updatedAt: number;
 }

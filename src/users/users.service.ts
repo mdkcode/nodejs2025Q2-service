@@ -1,49 +1,32 @@
 import { Injectable } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { UsersRepository } from './users.repository';
 
 @Injectable()
 export class UsersService {
-  private users = [];
-  private nextId = 1;
+  constructor(private readonly usersRepo: UsersRepository) {}
 
   create(createUserDto: CreateUserDto) {
-    const newUser = {
-      id: this.nextId++,
+    return this.usersRepo.create({
       login: createUserDto.login,
       password: createUserDto.password,
-      version: 1,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-    };
-
-    this.users.push(newUser);
-    return newUser;
+    });
   }
 
   findAll() {
-    return this.users;
+    return this.usersRepo.findAll();
   }
 
-  findOne(id: number) {
-    const user = this.users.find((user) => user.id === id);
-    if (!user) throw new Error(`User with id ${id} not found`);
-    return user;
+  findOne(id: string) {
+    return this.usersRepo.findOne(id);
   }
 
-  update(id: number, updateUserDto: UpdateUserDto) {
-    const user = this.findOne(id);
-    Object.assign(user, {
-      ...updateUserDto,
-      version: user.version + 1,
-      updatedAt: Date.now(),
-    });
-    return user;
+  update(id: string, updateUserDto: UpdateUserDto) {
+    return this.usersRepo.update(id, updateUserDto);
   }
 
-  remove(id: number): void {
-    const index = this.users.findIndex((user) => user.id === id);
-    if (index === -1) throw new Error(`User with id ${id} not found`);
-    this.users.splice(index, 1);
+  remove(id: string): void {
+    return this.usersRepo.remove(id);
   }
 }
