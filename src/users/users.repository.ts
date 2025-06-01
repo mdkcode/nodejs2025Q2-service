@@ -1,7 +1,12 @@
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+} from '@nestjs/common';
 import { PublicUser, User } from './entities/user.entity';
 import { randomUUID } from 'crypto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { handleErrors } from 'src/errorHandling';
 
 @Injectable()
 export class UsersRepository {
@@ -18,6 +23,8 @@ export class UsersRepository {
   }
 
   create(user: Partial<User>): PublicUser {
+    if (!user?.login || !user?.password)
+      throw new BadRequestException('Required fields are missing');
     const newUser: User = {
       id: randomUUID(),
       login: user.login,
@@ -35,24 +42,27 @@ export class UsersRepository {
   }
 
   findOne(id: string): PublicUser {
+    handleErrors(id, this.users);
     const user = this.users.find((user) => user.id === id);
-    if (!user) throw new Error(`User with id ${id} not found`);
     return this.excludePassword(user);
   }
 
   update(id: string, update: UpdateUserDto): PublicUser {
-    const user = this.findOne(id);
-    Object.assign(user, {
-      version: user.version + 1,
-      updatedAt: Date.now(),
-      password: update.newPassword,
-    });
-    return user;
+    handleErrors(id, this.users);
+    const user = this.users.find((user) => user.id === id);
+    if (update.oldPassword !== user.password) {
+      throw new ForbiddenException('Invalid password');
+    } else {
+      user.password = update.newPassword;
+      user.version += 1;
+      user.updatedAt = Date.now();
+    }
+    return this.excludePassword(user);
   }
 
   remove(id: string): void {
+    handleErrors(id, this.users);
     const index = this.users.findIndex((user) => user.id === id);
-    if (index === -1) throw new Error(`User with id ${id} not found`);
     this.users.splice(index, 1);
   }
 }

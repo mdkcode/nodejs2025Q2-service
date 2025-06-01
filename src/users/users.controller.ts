@@ -18,6 +18,7 @@ export class UsersController {
   constructor(private readonly usersRepository: UsersRepository) {}
 
   @Post()
+  @HttpCode(HttpStatus.CREATED)
   create(@Body() createUserDto: CreateUserDto) {
     return this.usersRepository.create(createUserDto);
   }
@@ -39,6 +40,7 @@ export class UsersController {
   }
 
   @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
   remove(@Param('id') id: string) {
     return this.usersRepository.remove(id);
   }
