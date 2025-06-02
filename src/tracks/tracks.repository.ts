@@ -10,7 +10,7 @@ export class TracksRepository {
   private tracks = [];
 
   create(track: CreateTrackDto): Track {
-    if (!track?.name || !track.duration)
+    if (!track.name || !track.duration)
       throw new BadRequestException('Required fields are missing');
     const newTrack = {
       id: randomUUID(),
@@ -69,5 +69,21 @@ export class TracksRepository {
     handleErrors(id, this.tracks);
     const index = this.tracks.findIndex((track) => track.id === id);
     this.tracks.splice(index, 1);
+  }
+
+  nullifyArtist(artistId: string): void {
+    for (const track of this.tracks) {
+      if (track.artistId === artistId) {
+        track.artistId = null;
+      }
+    }
+  }
+
+  nullifyAlbum(albumId: string): void {
+    for (const track of this.tracks) {
+      if (track.albumId === albumId) {
+        track.albumId = null;
+      }
+    }
   }
 }
