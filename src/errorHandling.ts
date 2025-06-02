@@ -7,5 +7,5 @@ export const handleErrors = (id: string, items: { id: string }[]) => {
     throw new BadRequestException(`Invalid UUID: ${id}`);
   }
   const item = items.find((user) => user.id === id);
-  if (!item) throw new NotFoundException(`User with id ${id} not found`);
+  if (!item) throw new NotFoundException(`Item with id ${id} not found`);
 };
