@@ -1,26 +1,47 @@
-import { Injectable } from '@nestjs/common';
-import { CreateFavoriteDto } from './dto/create-favorite.dto';
-import { UpdateFavoriteDto } from './dto/update-favorite.dto';
-
+import { Delete, Get, Param, Post, HttpCode, Injectable } from '@nestjs/common';
+import { FavoritesRepository } from './favorites.repository';
 @Injectable()
 export class FavoritesService {
-  create(createFavoriteDto: CreateFavoriteDto) {
-    return 'This action adds a new favorite';
+  constructor(private readonly favsRepo: FavoritesRepository) {}
+
+  @Get()
+  getAll() {
+    return this.favsRepo.getAll();
   }
 
-  findAll() {
-    return `This action returns all favorites`;
+  @Post('track/:id')
+  @HttpCode(201)
+  addTrack(@Param('id') id: string) {
+    return this.favsRepo.add('track', id);
   }
 
-  findOne(id: string) {
-    return `This action returns a #${id} favorite`;
+  @Delete('track/:id')
+  @HttpCode(204)
+  removeTrack(@Param('id') id: string) {
+    this.favsRepo.remove('track', id);
   }
 
-  update(id: string, updateFavoriteDto: UpdateFavoriteDto) {
-    return `This action updates a #${id} favorite`;
+  @Post('album/:id')
+  @HttpCode(201)
+  addAlbum(@Param('id') id: string) {
+    return this.favsRepo.add('album', id);
   }
 
-  remove(id: string) {
-    return `This action removes a #${id} favorite`;
+  @Delete('album/:id')
+  @HttpCode(204)
+  removeAlbum(@Param('id') id: string) {
+    this.favsRepo.remove('album', id);
+  }
+
+  @Post('artist/:id')
+  @HttpCode(201)
+  addArtist(@Param('id') id: string) {
+    return this.favsRepo.add('artist', id);
+  }
+
+  @Delete('artist/:id')
+  @HttpCode(204)
+  removeArtist(@Param('id') id: string) {
+    this.favsRepo.remove('artist', id);
   }
 }

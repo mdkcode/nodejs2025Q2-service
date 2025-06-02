@@ -1,45 +1,34 @@
 import {
+  BadRequestException,
   Controller,
-  Get,
-  Post,
-  Body,
-  Put,
-  Param,
   Delete,
+  Get,
+  Param,
+  Post,
 } from '@nestjs/common';
-import { FavoritesService } from './favorites.service';
-import { CreateFavoriteDto } from './dto/create-favorite.dto';
-import { UpdateFavoriteDto } from './dto/update-favorite.dto';
-
-@Controller('favorites')
+import { FavoritesRepository } from './favorites.repository';
+import { repoType } from './entities/favorite.entity';
+@Controller('favs')
 export class FavoritesController {
-  constructor(private readonly favoritesService: FavoritesService) {}
-
-  @Post()
-  create(@Body() createFavoriteDto: CreateFavoriteDto) {
-    return this.favoritesService.create(createFavoriteDto);
-  }
+  constructor(private readonly favoritesRepo: FavoritesRepository) {}
 
   @Get()
-  findAll() {
-    return this.favoritesService.findAll();
+  getAll() {
+    return this.favoritesRepo.getAll();
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.favoritesService.findOne(id);
+  @Post(':type/:id')
+  add(@Param('type') type: repoType, @Param('id') id: string) {
+    if (!['track', 'album', 'artist'].includes(type))
+      throw new BadRequestException('Invalid type');
+    this.favoritesRepo.add(type, id);
+    return { message: `${type} added to favorites` };
   }
 
-  @Put(':id')
-  update(
-    @Param('id') id: string,
-    @Body() updateFavoriteDto: UpdateFavoriteDto,
-  ) {
-    return this.favoritesService.update(id, updateFavoriteDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.favoritesService.remove(id);
+  @Delete(':type/:id')
+  remove(@Param('type') type: repoType, @Param('id') id: string) {
+    if (!['track', 'album', 'artist'].includes(type))
+      throw new BadRequestException('Invalid type');
+    this.favoritesRepo.remove(type, id);
   }
 }

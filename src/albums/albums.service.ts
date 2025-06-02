@@ -3,12 +3,14 @@ import { CreateAlbumDto } from './dto/create-album.dto';
 import { UpdateAlbumDto } from './dto/update-album.dto';
 import { AlbumsRepository } from './albums.repository';
 import { TracksRepository } from 'src/tracks/tracks.repository';
+import { FavoritesRepository } from 'src/favorites/favorites.repository';
 
 @Injectable()
 export class AlbumsService {
   constructor(
     private readonly albumsRepo: AlbumsRepository,
     private readonly tracksRepo: TracksRepository,
+    private readonly favsRepo: FavoritesRepository,
   ) {}
   create(createAlbumDto: CreateAlbumDto) {
     return this.albumsRepo.create(createAlbumDto);
@@ -28,6 +30,7 @@ export class AlbumsService {
 
   remove(id: string) {
     this.tracksRepo.nullifyAlbum(id);
-    return this.albumsRepo.remove(id);
+    this.favsRepo.removeIdFromFavorites('album', id);
+    this.albumsRepo.remove(id);
   }
 }

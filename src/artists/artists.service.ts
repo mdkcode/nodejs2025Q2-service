@@ -4,6 +4,7 @@ import { UpdateArtistDto } from './dto/update-artist.dto';
 import { ArtistsRepository } from './artists.repository';
 import { TracksRepository } from 'src/tracks/tracks.repository';
 import { AlbumsRepository } from 'src/albums/albums.repository';
+import { FavoritesRepository } from 'src/favorites/favorites.repository';
 
 @Injectable()
 export class ArtistsService {
@@ -11,6 +12,7 @@ export class ArtistsService {
     private readonly artistsRepo: ArtistsRepository,
     private readonly tracksRepo: TracksRepository,
     private readonly albumsRepo: AlbumsRepository,
+    private readonly favsRepo: FavoritesRepository,
   ) {}
   create(createArtistDto: CreateArtistDto) {
     return this.artistsRepo.create(createArtistDto);
@@ -31,6 +33,7 @@ export class ArtistsService {
   remove(id: string) {
     this.tracksRepo.nullifyArtist(id);
     this.albumsRepo.nullifyArtist(id);
-    return this.artistsRepo.remove(id);
+    this.favsRepo.removeIdFromFavorites('artist', id);
+    this.artistsRepo.remove(id);
   }
 }
