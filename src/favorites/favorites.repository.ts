@@ -43,10 +43,11 @@ export class FavoritesRepository {
       album: this.albumsRepo,
       artist: this.artistsRepo,
     }[type];
-
-    const exists = repo.findOne(id);
-    if (!exists) throw new UnprocessableEntityException(`${type} not found`);
-
+    try {
+      repo.findOne(id);
+    } catch (e) {
+      throw new UnprocessableEntityException(`${type} not found`);
+    }
     const list = this[`favorite${capitalize(type)}Ids`];
     if (!list.includes(id)) list.push(id);
   }

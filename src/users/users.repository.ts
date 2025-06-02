@@ -52,15 +52,19 @@ export class UsersRepository {
       throw new BadRequestException('Missing required fields');
     }
     handleErrors(id, this.users);
-    const user = this.users.find((user) => user.id === id);
+    const userIndex = this.users.findIndex((user) => user.id === id);
+    const user = this.users[userIndex];
     if (update.oldPassword !== user.password) {
       throw new ForbiddenException('Invalid password');
     }
-    user.password = update.newPassword;
-    user.version += 1;
-    user.updatedAt = Date.now();
-
-    return this.excludePassword(user);
+    const updatedUser = {
+      ...user,
+      password: update.newPassword,
+      version: user.version + 1,
+      updatedAt: Date.now(),
+    };
+    this.users[userIndex] = updatedUser;
+    return this.excludePassword(updatedUser);
   }
 
   remove(id: string): void {
