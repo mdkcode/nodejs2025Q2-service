@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { randomUUID } from 'crypto';
-import { handleErrors } from 'src/errorHandling';
+import { handleErrors, isValidUUID } from 'src/errorHandling';
 import { CreateTrackDto } from './dto/create-track.dto';
 import { Track } from './entities/track.entity';
 import { UpdateTrackDto } from './dto/update-track.dto';
@@ -10,7 +10,7 @@ export class TracksRepository {
   private tracks = [];
 
   create(track: CreateTrackDto): Track {
-    if (!track?.name || !track?.albumId || !track.artistId || !track.duration)
+    if (!track?.name || !track.duration)
       throw new BadRequestException('Required fields are missing');
     const newTrack = {
       id: randomUUID(),
@@ -31,6 +31,20 @@ export class TracksRepository {
   }
 
   update(id: string, update: UpdateTrackDto): Track {
+    if (
+      !(
+        (typeof update?.name === 'string' && update.name.trim() !== '') ||
+        (typeof update?.duration === 'number' &&
+          Number.isInteger(update.duration) &&
+          update.duration > 0) ||
+        (typeof update?.artistId === 'string' &&
+          isValidUUID(update.artistId)) ||
+        (typeof update?.albumId === 'string' && isValidUUID(update.albumId))
+      )
+    ) {
+      throw new BadRequestException('At least one field is required to update');
+    }
+
     handleErrors(id, this.tracks);
     const track = this.tracks.find((track) => track.id === id);
     if (update.name) {
