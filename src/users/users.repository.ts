@@ -48,15 +48,18 @@ export class UsersRepository {
   }
 
   update(id: string, update: UpdateUserDto): PublicUser {
+    if (!update?.oldPassword || !update?.newPassword) {
+      throw new BadRequestException('Missing required fields');
+    }
     handleErrors(id, this.users);
     const user = this.users.find((user) => user.id === id);
     if (update.oldPassword !== user.password) {
       throw new ForbiddenException('Invalid password');
-    } else {
-      user.password = update.newPassword;
-      user.version += 1;
-      user.updatedAt = Date.now();
     }
+    user.password = update.newPassword;
+    user.version += 1;
+    user.updatedAt = Date.now();
+
     return this.excludePassword(user);
   }
 
