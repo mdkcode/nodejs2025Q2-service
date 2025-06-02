@@ -10,7 +10,7 @@ export class AlbumsRepository {
   private albums = [];
 
   create(album: CreateAlbumDto): Album {
-    if (!album?.name || album?.year)
+    if (!album?.name || !album?.year)
       throw new BadRequestException('Required fields are missing');
     const newAlbum = {
       id: randomUUID(),
@@ -65,9 +65,9 @@ export class AlbumsRepository {
   }
 
   nullifyArtist(artistId: string): void {
-    for (const track of this.albums) {
-      if (track.artistId === artistId) {
-        track.artistId = null;
+    for (const album of this.albums) {
+      if (album.artistId === artistId) {
+        album.artistId = null;
       }
     }
   }

@@ -3,6 +3,8 @@ import {
   BadRequestException,
   UnprocessableEntityException,
   NotFoundException,
+  forwardRef,
+  Inject,
 } from '@nestjs/common';
 import { isValidUUID } from 'src/errorHandling';
 import { TracksRepository } from 'src/tracks/tracks.repository';
@@ -17,8 +19,11 @@ export class FavoritesRepository {
   private favoriteArtistIds: string[] = [];
 
   constructor(
+    @Inject(forwardRef(() => TracksRepository))
     private tracksRepo: TracksRepository,
+    @Inject(forwardRef(() => AlbumsRepository))
     private albumsRepo: AlbumsRepository,
+    @Inject(forwardRef(() => ArtistsRepository))
     private artistsRepo: ArtistsRepository,
   ) {}
 

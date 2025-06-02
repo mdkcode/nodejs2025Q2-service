@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { CreateTrackDto } from './dto/create-track.dto';
 import { UpdateTrackDto } from './dto/update-track.dto';
 import { TracksRepository } from './tracks.repository';
@@ -8,6 +8,7 @@ import { FavoritesRepository } from 'src/favorites/favorites.repository';
 export class TracksService {
   constructor(
     private readonly tracksRepo: TracksRepository,
+    @Inject(forwardRef(() => FavoritesRepository))
     private readonly favsRepo: FavoritesRepository,
   ) {}
   create(createTrackDto: CreateTrackDto) {

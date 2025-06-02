@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { CreateAlbumDto } from './dto/create-album.dto';
 import { UpdateAlbumDto } from './dto/update-album.dto';
 import { AlbumsRepository } from './albums.repository';
@@ -9,7 +9,9 @@ import { FavoritesRepository } from 'src/favorites/favorites.repository';
 export class AlbumsService {
   constructor(
     private readonly albumsRepo: AlbumsRepository,
+    @Inject(forwardRef(() => TracksRepository))
     private readonly tracksRepo: TracksRepository,
+    @Inject(forwardRef(() => FavoritesRepository))
     private readonly favsRepo: FavoritesRepository,
   ) {}
   create(createAlbumDto: CreateAlbumDto) {
@@ -29,8 +31,8 @@ export class AlbumsService {
   }
 
   remove(id: string) {
+    this.albumsRepo.remove(id);
     this.tracksRepo.nullifyAlbum(id);
     this.favsRepo.removeIdFromFavorites('album', id);
-    this.albumsRepo.remove(id);
   }
 }

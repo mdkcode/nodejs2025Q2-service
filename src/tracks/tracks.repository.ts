@@ -72,6 +72,7 @@ export class TracksRepository {
   }
 
   nullifyArtist(artistId: string): void {
+    console.log(this.tracks, artistId);
     for (const track of this.tracks) {
       if (track.artistId === artistId) {
         track.artistId = null;

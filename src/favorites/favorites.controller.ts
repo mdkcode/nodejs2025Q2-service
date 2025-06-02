@@ -3,6 +3,8 @@ import {
   Controller,
   Delete,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
   Post,
 } from '@nestjs/common';
@@ -18,6 +20,7 @@ export class FavoritesController {
   }
 
   @Post(':type/:id')
+  @HttpCode(HttpStatus.CREATED)
   add(@Param('type') type: repoType, @Param('id') id: string) {
     if (!['track', 'album', 'artist'].includes(type))
       throw new BadRequestException('Invalid type');
@@ -26,6 +29,7 @@ export class FavoritesController {
   }
 
   @Delete(':type/:id')
+  @HttpCode(HttpStatus.NO_CONTENT)
   remove(@Param('type') type: repoType, @Param('id') id: string) {
     if (!['track', 'album', 'artist'].includes(type))
       throw new BadRequestException('Invalid type');
