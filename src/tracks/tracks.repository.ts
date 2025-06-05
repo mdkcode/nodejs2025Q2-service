@@ -1,89 +1,83 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
-import { randomUUID } from 'crypto';
-import { handleErrors, isValidUUID } from 'src/errorHandling';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateTrackDto } from './dto/create-track.dto';
 import { Track } from './entities/track.entity';
 import { UpdateTrackDto } from './dto/update-track.dto';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { isValidUUID } from 'src/errorHandling';
 
 @Injectable()
 export class TracksRepository {
-  private tracks = [];
+  constructor(
+    @InjectRepository(Track)
+    private readonly trackRepo: Repository<Track>,
+  ) {}
 
-  create(track: CreateTrackDto): Track {
-    if (!track.name || !track.duration)
+  async create(trackDto: CreateTrackDto): Promise<Track> {
+    if (!trackDto.name || !trackDto.duration)
       throw new BadRequestException('Required fields are missing');
-    const newTrack = {
-      id: randomUUID(),
+    const track = this.trackRepo.create(trackDto);
+    return await this.trackRepo.save(track);
+  }
+
+  async findAll(): Promise<Track[]> {
+    return await this.trackRepo.find();
+  }
+
+  async findOne(id: string): Promise<Track> {
+    const track = await this.trackRepo.findOne({ where: { id } });
+    if (!track) {
+      throw new NotFoundException(`Track with ID ${id} not found`);
+    }
+    if (!isValidUUID(id)) {
+      throw new BadRequestException(`Invalid UUID: ${id}`);
+    }
+    return track;
+  }
+
+  async update(id: string, updateDto: UpdateTrackDto): Promise<Track> {
+    if (!isValidUUID(id)) {
+      throw new BadRequestException(`Invalid UUID: ${id}`);
+    }
+    const track = await this.findOne(id); // throws if not found
+
+    const updatedTrack = {
       ...track,
+      ...updateDto,
     };
-    this.tracks.push(newTrack);
-    return newTrack;
+
+    return await this.trackRepo.save(updatedTrack);
   }
 
-  findAll(): Track[] {
-    return this.tracks;
-  }
-
-  findOne(id: string): Track {
-    handleErrors(id, this.tracks);
-    const track = this.tracks.find((track) => track.id === id);
-    return track;
-  }
-
-  update(id: string, update: UpdateTrackDto): Track {
-    if (
-      !(
-        (typeof update?.name === 'string' && update.name.trim() !== '') ||
-        (typeof update?.duration === 'number' &&
-          Number.isInteger(update.duration) &&
-          update.duration > 0) ||
-        (typeof update?.artistId === 'string' &&
-          isValidUUID(update.artistId)) ||
-        (typeof update?.albumId === 'string' && isValidUUID(update.albumId))
-      )
-    ) {
-      throw new BadRequestException('At least one field is required to update');
+  async remove(id: string): Promise<void> {
+    if (!isValidUUID(id)) {
+      throw new BadRequestException(`Invalid UUID: ${id}`);
     }
-
-    handleErrors(id, this.tracks);
-    const track = this.tracks.find((track) => track.id === id);
-    if (update.name) {
-      track.name = update.name;
-    }
-
-    if (update.artistId) {
-      track.artistId = update.artistId;
-    }
-
-    if (update.albumId) {
-      track.albumId = update.albumId;
-    }
-
-    if (update.duration) {
-      track.duration = update.duration;
-    }
-    return track;
-  }
-
-  remove(id: string): void {
-    handleErrors(id, this.tracks);
-    const index = this.tracks.findIndex((track) => track.id === id);
-    this.tracks.splice(index, 1);
-  }
-
-  nullifyArtist(artistId: string): void {
-    for (const track of this.tracks) {
-      if (track.artistId === artistId) {
-        track.artistId = null;
-      }
+    const result = await this.trackRepo.delete(id);
+    if (result.affected === 0) {
+      throw new NotFoundException(`Track with ID ${id} not found`);
     }
   }
 
-  nullifyAlbum(albumId: string): void {
-    for (const track of this.tracks) {
-      if (track.albumId === albumId) {
-        track.albumId = null;
-      }
-    }
+  async nullifyArtist(artistId: string): Promise<void> {
+    await this.trackRepo
+      .createQueryBuilder()
+      .update(Track)
+      .set({ artistId: null })
+      .where('artistId = :artistId', { artistId })
+      .execute();
+  }
+
+  async nullifyAlbum(albumId: string): Promise<void> {
+    await this.trackRepo
+      .createQueryBuilder()
+      .update(Track)
+      .set({ albumId: null })
+      .where('albumId = :albumId', { albumId })
+      .execute();
   }
 }

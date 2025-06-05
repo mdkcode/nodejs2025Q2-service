@@ -1,61 +1,65 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
-import { randomUUID } from 'crypto';
-import { handleErrors } from 'src/errorHandling';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { Artist } from './entities/artist.entity';
 import { CreateArtistDto } from './dto/create-artist.dto';
 import { UpdateArtistDto } from './dto/update-artist.dto';
+import { isValidUUID } from 'src/errorHandling';
 
 @Injectable()
 export class ArtistsRepository {
-  private artists = [];
+  constructor(
+    @InjectRepository(Artist)
+    private readonly artistRepo: Repository<Artist>,
+  ) {}
 
-  create(artist: CreateArtistDto): Artist {
-    if (!artist?.name || artist.grammy === undefined)
+  async create(dto: CreateArtistDto): Promise<Artist> {
+    if (!dto.name || dto.grammy === undefined) {
       throw new BadRequestException('Required fields are missing');
-    const newArtist = {
-      id: randomUUID(),
-      ...artist,
-    };
-    this.artists.push(newArtist);
-    return newArtist;
+    }
+    const artist = this.artistRepo.create(dto);
+    return await this.artistRepo.save(artist);
   }
 
-  findAll(): Artist[] {
-    return this.artists;
+  async findAll(): Promise<Artist[]> {
+    return await this.artistRepo.find();
   }
 
-  findOne(id: string): Artist {
-    handleErrors(id, this.artists);
-    const artist = this.artists.find((artist) => artist.id === id);
+  async findOne(id: string): Promise<Artist> {
+    if (!isValidUUID(id)) {
+      throw new BadRequestException(`Invalid UUID: ${id}`);
+    }
+    const artist = await this.artistRepo.findOne({ where: { id } });
+    if (!artist) {
+      throw new NotFoundException(`Artist with ID ${id} not found`);
+    }
     return artist;
   }
 
-  update(id: string, update: UpdateArtistDto): Artist {
+  async update(id: string, dto: UpdateArtistDto): Promise<Artist> {
+    const artist = await this.findOne(id);
+
     if (
       !(
-        (typeof update?.name === 'string' && update.name.trim() !== '') ||
-        typeof update?.grammy === 'boolean'
+        (typeof dto?.name === 'string' && dto.name.trim() !== '') ||
+        typeof dto?.grammy === 'boolean'
       )
     ) {
       throw new BadRequestException('At least one field is required to update');
     }
 
-    handleErrors(id, this.artists);
-    const artist = this.artists.find((artist) => artist.id === id);
-    if (update.name) {
-      artist.name = update.name;
-    }
-
-    if (update.grammy !== undefined) {
-      artist.grammy = update.grammy;
-    }
-
-    return artist;
+    Object.assign(artist, dto);
+    return await this.artistRepo.save(artist);
   }
 
-  remove(id: string): void {
-    handleErrors(id, this.artists);
-    const index = this.artists.findIndex((artist) => artist.id === id);
-    this.artists.splice(index, 1);
+  async remove(id: string): Promise<void> {
+    const result = await this.artistRepo.delete(id);
+    if (result.affected === 0) {
+      throw new NotFoundException(`Artist with ID ${id} not found`);
+    }
   }
 }

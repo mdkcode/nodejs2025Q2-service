@@ -11,24 +11,24 @@ export class TracksService {
     @Inject(forwardRef(() => FavoritesRepository))
     private readonly favsRepo: FavoritesRepository,
   ) {}
-  create(createTrackDto: CreateTrackDto) {
-    return this.tracksRepo.create(createTrackDto);
+  async create(createTrackDto: CreateTrackDto) {
+    return await this.tracksRepo.create(createTrackDto);
   }
 
-  findAll() {
-    return this.tracksRepo.findAll();
+  async findAll() {
+    return await this.tracksRepo.findAll();
   }
 
-  findOne(id: string) {
-    return this.tracksRepo.findOne(id);
+  async findOne(id: string) {
+    return await this.tracksRepo.findOne(id);
   }
 
-  update(id: string, updateTrackDto: UpdateTrackDto) {
-    return this.tracksRepo.update(id, updateTrackDto);
+  async update(id: string, updateTrackDto: UpdateTrackDto) {
+    return await this.tracksRepo.update(id, updateTrackDto);
   }
 
-  remove(id: string) {
-    this.favsRepo.removeIdFromFavorites('track', id);
-    this.tracksRepo.remove(id);
+  async remove(id: string) {
+    await this.favsRepo.removeIdFromFavorites('track', id);
+    await this.tracksRepo.remove(id);
   }
 }

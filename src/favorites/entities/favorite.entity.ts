@@ -1,11 +1,25 @@
-import { Track } from 'src/tracks/entities/track.entity';
-import { Album } from 'src/albums/entities/album.entity';
-import { Artist } from 'src/artists/entities/artist.entity';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  Unique,
+} from 'typeorm';
 
+@Entity()
+@Unique(['type', 'itemId']) // prevent duplicates
 export class Favorite {
-  artists: Artist[];
-  albums: Album[];
-  tracks: Track[];
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
+  @Column() // 'track' | 'album' | 'artist'
+  type: 'track' | 'album' | 'artist';
+
+  @Column()
+  itemId: string;
+
+  @CreateDateColumn()
+  addedAt: Date;
 }
 
 export type repoType = 'track' | 'album' | 'artist';

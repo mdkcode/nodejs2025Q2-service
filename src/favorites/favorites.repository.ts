@@ -1,11 +1,14 @@
 import {
-  Injectable,
   BadRequestException,
-  UnprocessableEntityException,
+  Injectable,
   NotFoundException,
+  UnprocessableEntityException,
   forwardRef,
   Inject,
 } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Favorite } from './entities/favorite.entity';
 import { isValidUUID } from 'src/errorHandling';
 import { TracksRepository } from 'src/tracks/tracks.repository';
 import { AlbumsRepository } from 'src/albums/albums.repository';
@@ -14,61 +17,74 @@ import { repoType } from './entities/favorite.entity';
 
 @Injectable()
 export class FavoritesRepository {
-  private favoriteTrackIds: string[] = [];
-  private favoriteAlbumIds: string[] = [];
-  private favoriteArtistIds: string[] = [];
-
   constructor(
+    @InjectRepository(Favorite)
+    private readonly favRepo: Repository<Favorite>,
+
     @Inject(forwardRef(() => TracksRepository))
-    private tracksRepo: TracksRepository,
+    private readonly tracksRepo: TracksRepository,
+
     @Inject(forwardRef(() => AlbumsRepository))
-    private albumsRepo: AlbumsRepository,
+    private readonly albumsRepo: AlbumsRepository,
+
     @Inject(forwardRef(() => ArtistsRepository))
-    private artistsRepo: ArtistsRepository,
+    private readonly artistsRepo: ArtistsRepository,
   ) {}
 
-  getAll() {
-    return {
-      artists: this.favoriteArtistIds.map((id) => this.artistsRepo.findOne(id)),
-      albums: this.favoriteAlbumIds.map((id) => this.albumsRepo.findOne(id)),
-      tracks: this.favoriteTrackIds.map((id) => this.tracksRepo.findOne(id)),
-    };
+  async getAll() {
+    const all = await this.favRepo.find();
+
+    const trackIds = all.filter((f) => f.type === 'track').map((f) => f.itemId);
+    const albumIds = all.filter((f) => f.type === 'album').map((f) => f.itemId);
+    const artistIds = all
+      .filter((f) => f.type === 'artist')
+      .map((f) => f.itemId);
+
+    const [tracks, albums, artists] = await Promise.all([
+      Promise.all(trackIds.map((id) => this.tracksRepo.findOne(id))),
+      Promise.all(albumIds.map((id) => this.albumsRepo.findOne(id))),
+      Promise.all(artistIds.map((id) => this.artistsRepo.findOne(id))),
+    ]);
+
+    return { tracks, albums, artists };
   }
 
-  add(type: repoType, id: string) {
-    if (!isValidUUID(id)) throw new BadRequestException('Invalid UUID');
+  async add(type: repoType, id: string) {
+    if (!isValidUUID(id)) {
+      throw new BadRequestException('Invalid UUID');
+    }
 
     const repo = {
       track: this.tracksRepo,
       album: this.albumsRepo,
       artist: this.artistsRepo,
     }[type];
+
     try {
-      repo.findOne(id);
-    } catch (e) {
+      await repo.findOne(id);
+    } catch {
       throw new UnprocessableEntityException(`${type} not found`);
     }
-    const list = this[`favorite${capitalize(type)}Ids`];
-    if (!list.includes(id)) list.push(id);
+
+    const exists = await this.favRepo.findOne({ where: { type, itemId: id } });
+    if (!exists) {
+      const fav = this.favRepo.create({ type, itemId: id });
+      await this.favRepo.save(fav);
+    }
   }
 
-  remove(type: repoType, id: string) {
-    if (!isValidUUID(id)) throw new BadRequestException('Invalid UUID');
+  async remove(type: repoType, id: string) {
+    if (!isValidUUID(id)) {
+      throw new BadRequestException('Invalid UUID');
+    }
 
-    const list = this[`favorite${capitalize(type)}Ids`];
-    const index = list.indexOf(id);
-    if (index === -1) throw new NotFoundException(`${type} is not favorite`);
-
-    list.splice(index, 1);
+    const result = await this.favRepo.delete({ type, itemId: id });
+    if (result.affected === 0) {
+      throw new NotFoundException(`${type} is not in favorites`);
+    }
   }
 
-  removeIdFromFavorites(type: repoType, id: string): void {
-    const list = this[`favorite${capitalize(type)}Ids`] as string[];
-    const index = list.indexOf(id);
-    if (index !== -1) list.splice(index, 1);
+  async removeIdFromFavorites(type: repoType, id: string): Promise<void> {
+    await this.favRepo.delete({ type, itemId: id });
   }
-}
-
-function capitalize(str: string) {
-  return str[0].toUpperCase() + str.slice(1);
 }
