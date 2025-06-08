@@ -1,74 +1,76 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
-import { randomUUID } from 'crypto';
-import { handleErrors, isValidUUID } from 'src/errorHandling';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { Album } from './entities/album.entity';
 import { CreateAlbumDto } from './dto/create-album.dto';
 import { UpdateAlbumDto } from './dto/update-album.dto';
+import { isValidUUID } from 'src/errorHandling';
 
 @Injectable()
 export class AlbumsRepository {
-  private albums = [];
+  constructor(
+    @InjectRepository(Album)
+    private readonly albumRepo: Repository<Album>,
+  ) {}
 
-  create(album: CreateAlbumDto): Album {
-    if (!album?.name || !album?.year)
+  async create(dto: CreateAlbumDto): Promise<Album> {
+    if (!dto.name || !dto.year) {
       throw new BadRequestException('Required fields are missing');
-    const newAlbum = {
-      id: randomUUID(),
-      ...album,
-    };
-    this.albums.push(newAlbum);
-    return newAlbum;
+    }
+    const album = this.albumRepo.create(dto);
+    return await this.albumRepo.save(album);
   }
 
-  findAll(): Album[] {
-    return this.albums;
+  async findAll(): Promise<Album[]> {
+    return await this.albumRepo.find();
   }
 
-  findOne(id: string): Album {
-    handleErrors(id, this.albums);
-    const album = this.albums.find((album) => album.id === id);
+  async findOne(id: string): Promise<Album> {
+    if (!isValidUUID(id)) {
+      throw new BadRequestException(`Invalid UUID: ${id}`);
+    }
+
+    const album = await this.albumRepo.findOne({ where: { id } });
+    if (!album) {
+      throw new NotFoundException(`Album with ID ${id} not found`);
+    }
     return album;
   }
 
-  update(id: string, update: UpdateAlbumDto): Album {
+  async update(id: string, dto: UpdateAlbumDto): Promise<Album> {
+    const album = await this.findOne(id);
+
     if (
       !(
-        (typeof update?.name === 'string' && update.name.trim() !== '') ||
-        Number.isInteger(update.year) ||
-        (update.artistId && isValidUUID(update.artistId))
+        (typeof dto?.name === 'string' && dto.name.trim() !== '') ||
+        Number.isInteger(dto?.year) ||
+        (dto.artistId && isValidUUID(dto.artistId))
       )
     ) {
       throw new BadRequestException('At least one field is required to update');
     }
 
-    handleErrors(id, this.albums);
-    const album = this.albums.find((album) => album.id === id);
-    if (update.name) {
-      album.name = update.name;
-    }
-
-    if (update.year) {
-      album.year = update.year;
-    }
-
-    if (update.artistId) {
-      album.artistId = update.artistId;
-    }
-
-    return album;
+    Object.assign(album, dto);
+    return await this.albumRepo.save(album);
   }
 
-  remove(id: string): void {
-    handleErrors(id, this.albums);
-    const index = this.albums.findIndex((album) => album.id === id);
-    this.albums.splice(index, 1);
+  async remove(id: string): Promise<void> {
+    const result = await this.albumRepo.delete(id);
+    if (result.affected === 0) {
+      throw new NotFoundException(`Album with ID ${id} not found`);
+    }
   }
 
-  nullifyArtist(artistId: string): void {
-    for (const album of this.albums) {
-      if (album.artistId === artistId) {
-        album.artistId = null;
-      }
-    }
+  async nullifyArtist(artistId: string): Promise<void> {
+    await this.albumRepo
+      .createQueryBuilder()
+      .update(Album)
+      .set({ artistId: null })
+      .where('artistId = :artistId', { artistId })
+      .execute();
   }
 }

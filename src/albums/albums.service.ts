@@ -14,25 +14,26 @@ export class AlbumsService {
     @Inject(forwardRef(() => FavoritesRepository))
     private readonly favsRepo: FavoritesRepository,
   ) {}
-  create(createAlbumDto: CreateAlbumDto) {
-    return this.albumsRepo.create(createAlbumDto);
+
+  async create(dto: CreateAlbumDto) {
+    return await this.albumsRepo.create(dto);
   }
 
-  findAll() {
-    return this.albumsRepo.findAll();
+  async findAll() {
+    return await this.albumsRepo.findAll();
   }
 
-  findOne(id: string) {
-    return this.albumsRepo.findOne(id);
+  async findOne(id: string) {
+    return await this.albumsRepo.findOne(id);
   }
 
-  update(id: string, updateAlbumDto: UpdateAlbumDto) {
-    return this.albumsRepo.update(id, updateAlbumDto);
+  async update(id: string, dto: UpdateAlbumDto) {
+    return await this.albumsRepo.update(id, dto);
   }
 
-  remove(id: string) {
-    this.albumsRepo.remove(id);
-    this.tracksRepo.nullifyAlbum(id);
-    this.favsRepo.removeIdFromFavorites('album', id);
+  async remove(id: string) {
+    await this.albumsRepo.remove(id);
+    await this.tracksRepo.nullifyAlbum(id);
+    await this.favsRepo.removeIdFromFavorites('album', id);
   }
 }

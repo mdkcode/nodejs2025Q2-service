@@ -17,26 +17,27 @@ export class ArtistsService {
     @Inject(forwardRef(() => FavoritesRepository))
     private readonly favsRepo: FavoritesRepository,
   ) {}
-  create(createArtistDto: CreateArtistDto) {
-    return this.artistsRepo.create(createArtistDto);
+
+  async create(dto: CreateArtistDto) {
+    return await this.artistsRepo.create(dto);
   }
 
-  findAll() {
-    return this.artistsRepo.findAll();
+  async findAll() {
+    return await this.artistsRepo.findAll();
   }
 
-  findOne(id: string) {
-    return this.artistsRepo.findOne(id);
+  async findOne(id: string) {
+    return await this.artistsRepo.findOne(id);
   }
 
-  update(id: string, updateArtistDto: UpdateArtistDto) {
-    return this.artistsRepo.update(id, updateArtistDto);
+  async update(id: string, dto: UpdateArtistDto) {
+    return await this.artistsRepo.update(id, dto);
   }
 
-  remove(id: string) {
-    this.artistsRepo.remove(id);
-    this.tracksRepo.nullifyArtist(id);
-    this.albumsRepo.nullifyArtist(id);
-    this.favsRepo.removeIdFromFavorites('artist', id);
+  async remove(id: string) {
+    await this.artistsRepo.remove(id);
+    await this.tracksRepo.nullifyArtist(id);
+    await this.albumsRepo.nullifyArtist(id);
+    await this.favsRepo.removeIdFromFavorites('artist', id);
   }
 }

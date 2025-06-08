@@ -7,26 +7,26 @@ import { UsersRepository } from './users.repository';
 export class UsersService {
   constructor(private readonly usersRepo: UsersRepository) {}
 
-  create(createUserDto: CreateUserDto) {
-    return this.usersRepo.create({
+  async create(createUserDto: CreateUserDto) {
+    return await this.usersRepo.create({
       login: createUserDto.login,
       password: createUserDto.password,
     });
   }
 
-  findAll() {
-    return this.usersRepo.findAll();
+  async findAll() {
+    return await this.usersRepo.findAll();
   }
 
-  findOne(id: string) {
-    return this.usersRepo.findOne(id);
+  async findOne(id: string) {
+    return await this.usersRepo.findOne(id);
   }
 
-  update(id: string, updateUserDto: UpdateUserDto) {
-    return this.usersRepo.update(id, updateUserDto);
+  async update(id: string, updateUserDto: UpdateUserDto) {
+    return await this.usersRepo.update(id, updateUserDto);
   }
 
-  remove(id: string): void {
-    return this.usersRepo.remove(id);
+  async remove(id: string): Promise<void> {
+    await this.usersRepo.remove(id);
   }
 }
