@@ -7,12 +7,12 @@ import {
 } from 'typeorm';
 
 @Entity()
-@Unique(['type', 'itemId']) // prevent duplicates
+@Unique(['type', 'itemId'])
 export class Favorite {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column() // 'track' | 'album' | 'artist'
+  @Column()
   type: 'track' | 'album' | 'artist';
 
   @Column()

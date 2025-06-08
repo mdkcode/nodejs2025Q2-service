@@ -43,7 +43,7 @@ export class TracksRepository {
     if (!isValidUUID(id)) {
       throw new BadRequestException(`Invalid UUID: ${id}`);
     }
-    const track = await this.findOne(id); // throws if not found
+    const track = await this.findOne(id);
 
     const updatedTrack = {
       ...track,

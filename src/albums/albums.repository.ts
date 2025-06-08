@@ -42,7 +42,7 @@ export class AlbumsRepository {
   }
 
   async update(id: string, dto: UpdateAlbumDto): Promise<Album> {
-    const album = await this.findOne(id); // checks existence and UUID validity
+    const album = await this.findOne(id);
 
     if (
       !(
